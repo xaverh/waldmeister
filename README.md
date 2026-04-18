@@ -6,18 +6,19 @@ Tiny river window manager implemented in C++.
 
 The following system dependencies are required:
 
-- meson
-- ninja
-- wayland
-- xkbcommon
+- CMake
+- Wayland
+- libxkbcommon
 
 The "development" versions are required if applicable to your distribution.
 
 ## Building
 
 ```sh
-meson setup build
-ninja -C build
+mkdir build
+cd build
+cmake ..
+cmake --build .
 ```
 
 ## Running
