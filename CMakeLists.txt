@@ -16,8 +16,12 @@ find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
 
 # Protocol XML files
 set(PROTOCOL_XML_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-input-management-v1.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-layer-shell-v1.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-libinput-config-v1.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-window-management-v1.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-xkb-bindings-v1.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-xkb-config-v1.xml
 )
 
 set(GENERATED_SOURCES "")
