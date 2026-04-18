@@ -1,11 +1,6 @@
-<!--
-SPDX-FileCopyrightText: © 2026 Isaac Freund
-SPDX-License-Identifier: 0BSD
--->
+# waldmeister
 
-# tinyrwm.c
-
-Tiny river window manager implemented in C.
+Tiny river window manager implemented in C++.
 
 ## Dependencies
 
