@@ -23,5 +23,5 @@ ninja -C build
 ## Running
 
 ```
-river -c ./build/tinyrwm
+river -c ./build/waldmeister
 ```

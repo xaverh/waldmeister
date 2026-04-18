@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(tinyrwm LANGUAGES C VERSION 0.1)
+project(waldmeister LANGUAGES C VERSION 0.1)
 
 # Use C99 and strict warnings (matching Meson defaults)
 set(CMAKE_C_STANDARD 99)
@@ -53,18 +53,18 @@ foreach(xml ${PROTOCOL_XML_FILES})
 endforeach()
 
 # Main executable
-add_executable(tinyrwm
-    tinyrwm.c
+add_executable(waldmeister
+    waldmeister.c
     ${GENERATED_SOURCES}
 )
 
-target_include_directories(tinyrwm PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(waldmeister PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(tinyrwm PRIVATE
+target_link_libraries(waldmeister PRIVATE
     ${WAYLAND_CLIENT_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
 )
 
 # Install the binary
-install(TARGETS tinyrwm RUNTIME DESTINATION bin)
+install(TARGETS waldmeister RUNTIME DESTINATION bin)
 
