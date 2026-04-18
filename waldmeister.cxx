@@ -1,9 +1,8 @@
-#include <signal.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <csignal>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 #include "river-window-management-v1-client-protocol.h"
@@ -40,34 +39,34 @@ struct Window {
 	struct wl_list link; // WindowManager.windows
 };
 
-enum Action {
-	ACTION_NONE,
-	ACTION_SPAWN_FOOT,
-	ACTION_CLOSE,
-	ACTION_FOCUS_NEXT,
-	ACTION_MOVE,
-	ACTION_RESIZE,
-	ACTION_EXIT,
+enum class Action {
+	none,
+	spawn_foot,
+	close,
+	focus_next,
+	move,
+	resize,
+	exit,
 };
 
 struct XkbBinding {
 	struct river_xkb_binding_v1* obj;
 	struct Seat* seat;
-	enum Action action;
+	Action action;
 	struct wl_list link;
 };
 
 struct PointerBinding {
 	struct river_pointer_binding_v1* obj;
 	struct Seat* seat;
-	enum Action action;
+	Action action;
 	struct wl_list link;
 };
 
-enum SeatOp {
-	SEAT_OP_NONE,
-	SEAT_OP_MOVE,
-	SEAT_OP_RESIZE,
+enum class Seat_op {
+	none,
+	move,
+	resize,
 };
 
 struct Seat {
@@ -81,15 +80,13 @@ struct Seat {
 
 	struct wl_list xkb_bindings;     // XkbBinding
 	struct wl_list pointer_bindings; // PointerBinding
-	enum Action pending_action;
+	Action pending_action;
 
-	enum SeatOp op;
-	// For SEAT_OP_MOVE and SEAT_OP_RESIZE
+	Seat_op op; // For Seat_op::move and Seat_op::resize
 	struct Window* op_window;
 	int32_t op_start_x, op_start_y;
 	int32_t op_dx, op_dy;
-	bool op_release;
-	// For SEAT_OP_RESIZE only
+	bool op_release; // For Seat_op::resize only
 	int32_t op_start_width, op_start_height;
 	uint32_t op_edges;
 
@@ -277,7 +274,7 @@ static void window_maybe_destroy(struct Window* window)
 		}
 		if (seat->op_window == window) {
 			river_seat_v1_op_end(seat->obj);
-			seat->op = SEAT_OP_NONE;
+			seat->op = Seat_op::none;
 			seat->op_window = NULL;
 		}
 	}
@@ -523,7 +520,7 @@ static void seat_pointer_move(struct Seat* seat, struct Window* window)
 {
 	seat_focus(seat, window);
 	river_seat_v1_op_start_pointer(seat->obj);
-	seat->op = SEAT_OP_MOVE;
+	seat->op = Seat_op::move;
 	seat->op_window = window;
 	seat->op_start_x = window->x;
 	seat->op_start_y = window->y;
@@ -537,7 +534,7 @@ static void seat_pointer_resize(struct Seat* seat, struct Window* window,
 	seat_focus(seat, window);
 	river_window_v1_inform_resize_start(window->obj);
 	river_seat_v1_op_start_pointer(seat->obj);
-	seat->op = SEAT_OP_RESIZE;
+	seat->op = Seat_op::resize;
 	seat->op_window = window;
 	seat->op_edges = edges;
 	seat->op_start_x = window->x;
@@ -551,19 +548,19 @@ static void seat_pointer_resize(struct Seat* seat, struct Window* window,
 static void seat_action(struct Seat* seat, enum Action action)
 {
 	switch (action) {
-	case ACTION_NONE:
+	case Action::none:
 		break;
-	case ACTION_SPAWN_FOOT:
+	case Action::spawn_foot:
 		if (fork() == 0) {
 			execlp("foot", "foot", (char*)0);
 		}
 		break;
-	case ACTION_CLOSE:
+	case Action::close:
 		if (seat->focused != NULL) {
 			river_window_v1_close(seat->focused->obj);
 		}
 		break;
-	case ACTION_FOCUS_NEXT:
+	case Action::focus_next:
 		if (!wl_list_empty(&wm.windows)) {
 			// Focus the bottom window
 			struct Window* window =
@@ -571,19 +568,19 @@ static void seat_action(struct Seat* seat, enum Action action)
 			seat_focus(seat, window);
 		}
 		break;
-	case ACTION_MOVE:
-		if (seat->op == SEAT_OP_NONE && seat->hovered != NULL) {
+	case Action::move:
+		if (seat->op == Seat_op::none && seat->hovered != NULL) {
 			seat_pointer_move(seat, seat->hovered);
 		}
 		break;
-	case ACTION_RESIZE:
-		if (seat->op == SEAT_OP_NONE && seat->hovered != NULL) {
+	case Action::resize:
+		if (seat->op == Seat_op::none && seat->hovered != NULL) {
 			seat_pointer_resize(seat, seat->hovered,
 			                    RIVER_WINDOW_V1_EDGES_BOTTOM |
 			                        RIVER_WINDOW_V1_EDGES_RIGHT);
 		}
 		break;
-	case ACTION_EXIT:
+	case Action::exit:
 		river_window_manager_v1_exit_session(window_manager_v1);
 		break;
 	}
@@ -595,12 +592,12 @@ static void seat_manage(struct Seat* seat)
 		seat->new_ = false;
 		const uint32_t super = RIVER_SEAT_V1_MODIFIERS_MOD4;
 		xkb_binding_create(seat, super, XKB_KEY_space,
-		                   ACTION_SPAWN_FOOT);
-		xkb_binding_create(seat, super, XKB_KEY_q, ACTION_CLOSE);
-		xkb_binding_create(seat, super, XKB_KEY_n, ACTION_FOCUS_NEXT);
-		xkb_binding_create(seat, super, XKB_KEY_Escape, ACTION_EXIT);
-		pointer_binding_create(seat, super, BTN_LEFT, ACTION_MOVE);
-		pointer_binding_create(seat, super, BTN_RIGHT, ACTION_RESIZE);
+				   Action::spawn_foot);
+		xkb_binding_create(seat, super, XKB_KEY_q, Action::close);
+		xkb_binding_create(seat, super, XKB_KEY_n, Action::focus_next);
+		xkb_binding_create(seat, super, XKB_KEY_Escape, Action::exit);
+		pointer_binding_create(seat, super, BTN_LEFT, Action::move);
+		pointer_binding_create(seat, super, BTN_RIGHT, Action::resize);
 	}
 
 	// If no window was interacted with in the current manage sequence,
@@ -610,24 +607,24 @@ static void seat_manage(struct Seat* seat)
 	seat->interacted = NULL;
 
 	seat_action(seat, seat->pending_action);
-	seat->pending_action = ACTION_NONE;
+	seat->pending_action = Action::none;
 
 	switch (seat->op) {
-	case SEAT_OP_NONE:
+	case Seat_op::none:
 		break;
-	case SEAT_OP_MOVE:
+	case Seat_op::move:
 		if (seat->op_release) {
 			river_seat_v1_op_end(seat->obj);
-			seat->op = SEAT_OP_NONE;
+			seat->op = Seat_op::none;
 			seat->op_window = NULL;
 			break;
 		}
 		break;
-	case SEAT_OP_RESIZE:
+	case Seat_op::resize:
 		if (seat->op_release) {
 			river_window_v1_inform_resize_end(seat->op_window->obj);
 			river_seat_v1_op_end(seat->obj);
-			seat->op = SEAT_OP_NONE;
+			seat->op = Seat_op::none;
 			seat->op_window = NULL;
 			break;
 		}
@@ -656,14 +653,14 @@ static void seat_manage(struct Seat* seat)
 static void seat_render(struct Seat* seat)
 {
 	switch (seat->op) {
-	case SEAT_OP_NONE:
+	case Seat_op::none:
 		break;
-	case SEAT_OP_MOVE:
+	case Seat_op::move:
 		window_set_position(seat->op_window,
 		                    seat->op_start_x + seat->op_dx,
 		                    seat->op_start_y + seat->op_dy);
 		break;
-	case SEAT_OP_RESIZE:;
+	case Seat_op::resize:
 		int32_t x = seat->op_start_x;
 		int32_t y = seat->op_start_y;
 		if ((seat->op_edges & RIVER_WINDOW_V1_EDGES_LEFT) != 0) {
@@ -847,6 +844,15 @@ int main(void)
 		fprintf(stderr, "roundtrip failed\n");
 		return 1;
 	}
+
+	/*
+	river_xkb_config_v1_set_layout_by_name(
+	    river_xkb_config_global,
+	    "us",         // layout
+	    "altgr-intl", // variant
+	    "ctrl:nocaps" // options (can be NULL)
+	);
+	*/
 
 	if (window_manager_v1 == NULL || xkb_bindings_v1 == NULL) {
 		fprintf(stderr,

@@ -1,0 +1,18 @@
+---
+Checks: >
+  -*,
+  -bugprone-*,
+  -modernize-*,
+  -performance-*,
+  -readability-*,
+  -cppcoreguidelines-*,
+  cppcoreguidelines-use-enum-class,
+  -clang-analyzer-*,
+  -modernize-use-trailing-return-type,   # often too noisy
+  -readability-magic-numbers
+ExcludeHeaderFilterRegex: 'build/'
+WarningsAsErrors: false 
+CheckOptions:    {}
+SystemHeaders:   false
+...
+
