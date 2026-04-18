@@ -1,30 +1,28 @@
 cmake_minimum_required(VERSION 3.16)
-project(waldmeister LANGUAGES C VERSION 0.1)
+project(waldmeister LANGUAGES C CXX VERSION 0.1)
 
-# Use C99 and strict warnings (matching Meson defaults)
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(-D_POSIX_C_SOURCE=200809L)
-add_compile_options(-Wno-unused-parameter)  # Optional; remove if you prefer strictness
+add_compile_options(-Wno-unused-parameter)
 
-# Find required packages
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
-# Find wayland-scanner (required for protocol code generation)
 find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
 
-# Define protocol XML files (adjust paths if your protocol/ dir structure differs)
+# Protocol XML files
 set(PROTOCOL_XML_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-window-management-v1.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/protocol/river-xkb-bindings-v1.xml
 )
 
-# Generate C header + code for each protocol
 set(GENERATED_SOURCES "")
+set(GENERATED_HEADERS "")
+
 foreach(xml ${PROTOCOL_XML_FILES})
     get_filename_component(proto_name ${xml} NAME_WE)
 
@@ -37,7 +35,7 @@ foreach(xml ${PROTOCOL_XML_FILES})
         VERBATIM
     )
 
-    # Generate client code (implementation)
+    # Generate private code (implementation)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-protocol.c
         COMMAND ${WAYLAND_SCANNER} private-code ${xml}
@@ -46,25 +44,24 @@ foreach(xml ${PROTOCOL_XML_FILES})
         VERBATIM
     )
 
-    list(APPEND GENERATED_SOURCES
-        ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-client-protocol.h
-        ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-protocol.c
-    )
+    list(APPEND GENERATED_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-client-protocol.h)
+    list(APPEND GENERATED_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-protocol.c)
 endforeach()
 
 # Main executable
 add_executable(waldmeister
-    waldmeister.c
+    waldmeister.cxx
     ${GENERATED_SOURCES}
 )
 
 target_include_directories(waldmeister PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+# Crucial: Compile generated .c files as C, not as C++
+set_source_files_properties(${GENERATED_SOURCES} PROPERTIES LANGUAGE C)
 
 target_link_libraries(waldmeister PRIVATE
     ${WAYLAND_CLIENT_LIBRARIES}
     ${XKBCOMMON_LIBRARIES}
 )
 
-# Install the binary
 install(TARGETS waldmeister RUNTIME DESTINATION bin)
-

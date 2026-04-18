@@ -28,7 +28,7 @@ struct Window {
 	struct river_window_v1 *obj;
 	struct river_node_v1 *node;
 
-	bool new;
+	bool new_;
 	bool closed;
 
 	int32_t x;
@@ -75,7 +75,7 @@ enum SeatOp {
 
 struct Seat {
 	struct river_seat_v1 *obj;
-	bool new;
+	bool new_;
 	bool removed;
 
 	struct Window *focused;
@@ -111,7 +111,7 @@ struct river_window_manager_v1 *window_manager_v1;
 struct river_xkb_bindings_v1 *xkb_bindings_v1;
 
 static void output_handle_removed(void *data, struct river_output_v1 *obj) {
-	struct Output *output = data;
+	struct Output *output = static_cast<Output*>(data);
 	output->removed = true;
 }
 
@@ -137,27 +137,27 @@ static void output_maybe_destroy(struct Output *output) {
 }
 
 static void window_handle_closed(void *data, struct river_window_v1 *obj) {
-	struct Window *window = data;
+	struct Window *window = static_cast<Window*>(data);
 	window->closed = true;
 }
 
 static void window_handle_dimensions(
 		void *data, struct river_window_v1 *obj, int32_t width, int32_t height) {
-	struct Window *window = data;
+	struct Window *window = static_cast<Window*>(data);
 	window->width = width;
 	window->height = height;
 }
 
 static void window_handle_pointer_move_requested(
 		void *data, struct river_window_v1 *obj, struct river_seat_v1 *river_seat) {
-	struct Window *window = data;
-	window->pointer_move_requested = river_seat_v1_get_user_data(river_seat);
+	struct Window *window = static_cast<Window*>(data);
+	window->pointer_move_requested = static_cast<Seat*>(river_seat_v1_get_user_data(river_seat));
 }
 
 static void window_handle_pointer_resize_requested(
 		void *data, struct river_window_v1 *obj, struct river_seat_v1 *river_seat, uint32_t edges) {
-	struct Window *window = data;
-	window->pointer_resize_requested = river_seat_v1_get_user_data(river_seat);
+	struct Window *window = static_cast<Window*>(data);
+	window->pointer_resize_requested = static_cast<Seat*>(river_seat_v1_get_user_data(river_seat));
 	window->pointer_resize_requested_edges = edges;
 }
 
@@ -230,8 +230,8 @@ static void seat_pointer_move(struct Seat *seat, struct Window *window);
 static void seat_pointer_resize(struct Seat *seat, struct Window *window, uint32_t edges);
 
 static void window_manage(struct Window *window) {
-	if (window->new) {
-		window->new = false;
+	if (window->new_) {
+		window->new_ = false;
 		window_set_position(window, 0, 0);
 		river_window_v1_propose_dimensions(window->obj, 0, 0);
 	}
@@ -247,7 +247,7 @@ static void window_manage(struct Window *window) {
 }
 
 static void xkb_binding_handle_pressed(void *data, struct river_xkb_binding_v1 *obj) {
-	struct XkbBinding *binding = data;
+	struct XkbBinding *binding = static_cast<XkbBinding*>(data);
 	binding->seat->pending_action = binding->action;
 }
 
@@ -266,7 +266,7 @@ static void xkb_binding_destroy(struct XkbBinding *binding) {
 
 static void xkb_binding_create(
 		struct Seat *seat, uint32_t mods, xkb_keysym_t keysym, enum Action action) {
-	struct XkbBinding *binding = calloc(1, sizeof(struct XkbBinding));
+	struct XkbBinding *binding = static_cast<XkbBinding*>(calloc(1, sizeof(struct XkbBinding)));
 	binding->obj = river_xkb_bindings_v1_get_xkb_binding(xkb_bindings_v1, seat->obj, keysym, mods);
 	binding->seat = seat;
 	binding->action = action;
@@ -278,7 +278,7 @@ static void xkb_binding_create(
 }
 
 static void pointer_binding_handle_pressed(void *data, struct river_pointer_binding_v1 *obj) {
-	struct PointerBinding *binding = data;
+	struct PointerBinding *binding = static_cast<PointerBinding*>(data);
 	binding->seat->pending_action = binding->action;
 }
 
@@ -297,7 +297,7 @@ static void pointer_binding_destroy(struct PointerBinding *binding) {
 
 static void pointer_binding_create(
 		struct Seat *seat, uint32_t mods, uint32_t button, enum Action action) {
-	struct PointerBinding *binding = calloc(1, sizeof(struct PointerBinding));
+	struct PointerBinding *binding = static_cast<PointerBinding*>(calloc(1, sizeof(struct PointerBinding)));
 	binding->obj = river_seat_v1_get_pointer_binding(seat->obj, button, mods);
 	binding->seat = seat;
 	binding->action = action;
@@ -309,35 +309,35 @@ static void pointer_binding_create(
 }
 
 static void seat_handle_removed(void *data, struct river_seat_v1 *obj) {
-	struct Seat *seat = data;
+	struct Seat *seat = static_cast<Seat*>(data);
 	seat->removed = true;
 }
 
 static void seat_handle_pointer_enter(
 		void *data, struct river_seat_v1 *obj, struct river_window_v1 *river_window) {
-	struct Seat *seat = data;
-	seat->hovered = river_window_v1_get_user_data(river_window);
+	struct Seat *seat = static_cast<Seat*>(data);
+	seat->hovered = static_cast<Window*>(river_window_v1_get_user_data(river_window));
 }
 
 static void seat_handle_pointer_leave(void *data, struct river_seat_v1 *obj) {
-	struct Seat *seat = data;
+	struct Seat *seat = static_cast<Seat*>(data);
 	seat->hovered = NULL;
 }
 
 static void seat_handle_window_interaction(
 		void *data, struct river_seat_v1 *obj, struct river_window_v1 *river_window) {
-	struct Seat *seat = data;
-	seat->interacted = river_window_v1_get_user_data(river_window);
+	struct Seat *seat = static_cast<Seat*>(data);
+	seat->interacted = static_cast<Window*>(river_window_v1_get_user_data(river_window));
 }
 
 static void seat_handle_op_delta(void *data, struct river_seat_v1 *obj, int32_t dx, int32_t dy) {
-	struct Seat *seat = data;
+	struct Seat *seat = static_cast<Seat*>(data);
 	seat->op_dx = dx;
 	seat->op_dy = dy;
 }
 
 static void seat_handle_op_release(void *data, struct river_seat_v1 *obj) {
-	struct Seat *seat = data;
+	struct Seat *seat = static_cast<Seat*>(data);
 	seat->op_release = true;
 }
 
@@ -465,8 +465,8 @@ static void seat_action(struct Seat *seat, enum Action action) {
 }
 
 static void seat_manage(struct Seat *seat) {
-	if (seat->new) {
-		seat->new = false;
+	if (seat->new_) {
+		seat->new_ = false;
 		const uint32_t super = RIVER_SEAT_V1_MODIFIERS_MOD4;
 		xkb_binding_create(seat, super, XKB_KEY_space, ACTION_SPAWN_FOOT);
 		xkb_binding_create(seat, super, XKB_KEY_q, ACTION_CLOSE);
@@ -593,10 +593,10 @@ static void wm_handle_render_start(void *data, struct river_window_manager_v1 *o
 
 static void wm_handle_window(
 		void *data, struct river_window_manager_v1 *obj, struct river_window_v1 *river_window) {
-	struct Window *window = calloc(1, sizeof(struct Window));
+	struct Window *window = static_cast<Window*>(calloc(1, sizeof(struct Window)));
 	window->obj = river_window;
 	window->node = river_window_v1_get_node(window->obj);
-	window->new = true;
+	window->new_ = true;
 
 	river_window_v1_add_listener(window->obj, &river_window_listener, window);
 
@@ -605,7 +605,7 @@ static void wm_handle_window(
 
 static void wm_handle_output(
 		void *data, struct river_window_manager_v1 *obj, struct river_output_v1 *river_output) {
-	struct Output *output = calloc(1, sizeof(struct Output));
+	struct Output *output = static_cast<Output*>(calloc(1, sizeof(struct Output)));
 	output->obj = river_output;
 
 	river_output_v1_add_listener(output->obj, &river_output_listener, output);
@@ -615,9 +615,9 @@ static void wm_handle_output(
 
 static void wm_handle_seat(
 		void *data, struct river_window_manager_v1 *obj, struct river_seat_v1 *river_seat) {
-	struct Seat *seat = calloc(1, sizeof(struct Seat));
+	struct Seat *seat = static_cast<Seat*>(calloc(1, sizeof(struct Seat)));
 	seat->obj = river_seat;
-	seat->new = true;
+	seat->new_ = true;
 	wl_list_init(&seat->xkb_bindings);
 	wl_list_init(&seat->pointer_bindings);
 
@@ -649,14 +649,16 @@ static void wm_init(void) {
 }
 
 static void handle_global(void *data, struct wl_registry *registry, uint32_t name,
-		const char *interface, uint32_t version) {
-	if (strcmp(interface, river_window_manager_v1_interface.name) == 0) {
-		if (version >= 4) {
-			window_manager_v1 = wl_registry_bind(registry, name, &river_window_manager_v1_interface, 4);
-		}
-	} else if (strcmp(interface, river_xkb_bindings_v1_interface.name) == 0) {
-		xkb_bindings_v1 = wl_registry_bind(registry, name, &river_xkb_bindings_v1_interface, 1);
-	}
+        const char *interface, uint32_t version) {
+    if (strcmp(interface, river_window_manager_v1_interface.name) == 0) {
+        if (version >= 4) {
+            window_manager_v1 = static_cast<struct river_window_manager_v1*>(
+                wl_registry_bind(registry, name, &river_window_manager_v1_interface, 4));
+        }
+    } else if (strcmp(interface, river_xkb_bindings_v1_interface.name) == 0) {
+        xkb_bindings_v1 = static_cast<struct river_xkb_bindings_v1*>(
+            wl_registry_bind(registry, name, &river_xkb_bindings_v1_interface, 1));
+    }
 }
 
 static void handle_global_remove(void *data, struct wl_registry *registry, uint32_t name) {}
