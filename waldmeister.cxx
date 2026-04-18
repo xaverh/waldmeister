@@ -6,8 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <river-window-management-v1-client-protocol.h>
-#include <river-xkb-bindings-v1-client-protocol.h>
+#include "river-window-management-v1-client-protocol.h"
+#include "river-xkb-bindings-v1-client-protocol.h"
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
 

@@ -26,7 +26,6 @@ set(GENERATED_HEADERS "")
 foreach(xml ${PROTOCOL_XML_FILES})
     get_filename_component(proto_name ${xml} NAME_WE)
 
-    # Generate client header
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-client-protocol.h
         COMMAND ${WAYLAND_SCANNER} client-header ${xml}
@@ -35,7 +34,6 @@ foreach(xml ${PROTOCOL_XML_FILES})
         VERBATIM
     )
 
-    # Generate private code (implementation)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-protocol.c
         COMMAND ${WAYLAND_SCANNER} private-code ${xml}
@@ -48,15 +46,15 @@ foreach(xml ${PROTOCOL_XML_FILES})
     list(APPEND GENERATED_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/${proto_name}-protocol.c)
 endforeach()
 
-# Main executable
 add_executable(waldmeister
     waldmeister.cxx
     ${GENERATED_SOURCES}
+    ${GENERATED_HEADERS}
 )
 
 target_include_directories(waldmeister PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-# Crucial: Compile generated .c files as C, not as C++
+# Crucial: Compile the generated protocol .c files as C, not as C++.
 set_source_files_properties(${GENERATED_SOURCES} PROPERTIES LANGUAGE C)
 
 target_link_libraries(waldmeister PRIVATE
