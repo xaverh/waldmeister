@@ -1,0 +1,40 @@
+---
+# Indentation
+IndentWidth: 8
+UseTab: ForIndentation
+TabWidth: 8
+IndentCaseLabels: false 
+IndentGotoLabels: false
+IndentPPDirectives: None
+IndentAccessModifiers: false
+
+# Pointer and Reference alignment
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# const placement
+QualifierAlignment: Left        # east const
+
+# Braces and general style
+BreakBeforeBraces: Stroustrup
+BraceWrapping:
+  SplitEmptyFunction:  false
+  SplitEmptyRecord:    false
+  SplitEmptyNamespace: false
+
+# Other useful settings for consistency
+AlignTrailingComments: true
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+ColumnLimit: 80
+MaxEmptyLinesToKeep: 1
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpacesInAngles: Never
+SpacesInSquareBrackets: false
+SpacesInParentheses: false
+
+# C++ specific
+Standard: Latest
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
